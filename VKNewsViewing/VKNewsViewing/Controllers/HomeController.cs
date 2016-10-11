@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Net;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using VKNewsViewing.Models;
@@ -12,46 +10,36 @@ namespace VKNewsViewing.Controllers
     {
         private Graph _graph;
         private UsersCollection _members;
-        private Dictionary<int, Task<List<UserModel>>> _allFriends;
+        private Dictionary<int, List<UserModel>> _allFriends;
+        private VkApi _vkApi;
         private double _time;
 
         public HomeController()
         {
-
+            _graph = new Graph();
+            _vkApi = new VkApi();
         }
-        public ActionResult Users()
-        {
-            WebRequest req = WebRequest.Create("https://oauth.vk.com/authorize?" +
-                                                      "client_id=5652000&" +
-                                                      "scope=friends,wall,groups&" +
-                                                      "redirect_uri=https://oauth.vk.com/blank.html&" +
-                                                      "response_type=token" +
-                                                      "v=5.56");
-            WebResponse resp1 = req.GetResponse();
-            StreamReader sr = new StreamReader(resp1.GetResponseStream());
-            string jsonObj = sr.ReadToEnd();
 
-            return null;
+        public async Task<ActionResult> Posts(int userId)
+        {
+            var sw = Stopwatch.StartNew();
+            var allPosts = await _graph.GetAllPostsForUserAsync(userId);//_members.items[0].id);
+
+            var sortedPosts = _graph.SortPosts("likes", allPosts);
+            ViewBag.Message = sw.Elapsed.TotalMilliseconds;
+
+            return View(sortedPosts);
         }
 
         public async Task<ViewResult> Index()
         {
-            var api = new VkApi();
-            _graph = new Graph();
             _members = await _graph.GetMembersAsync(30390813);
-
-            var res = await api.GetPostsAsync(13221962, 0);
             var sw = Stopwatch.StartNew();
             _allFriends = await _graph.GetAllFriendsAsync(_members.items);
             _time = sw.Elapsed.TotalMilliseconds;
             ViewBag.Message = _time;
 
-            sw = Stopwatch.StartNew();
-            await _graph.GetAllPostsForUserAsync(24049528);
-            var posts = _graph.SortedPosts;
-            _time = sw.Elapsed.TotalMilliseconds;
-
-            return View(_allFriends);
+            return View(_members);
         }
 
 
@@ -62,11 +50,5 @@ namespace VKNewsViewing.Controllers
             return View();
         }
 
-        public ActionResult Contact()
-        {
-            ViewBag.Message = "Your contact page.";
-
-            return View();
-        }
     }
 }

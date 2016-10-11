@@ -14,17 +14,16 @@
 <div class="row">
     <div class="col-md-4">
         <h2>Users</h2>
-        @model Dictionary<int, System.Threading.Tasks.Task<List<VKNewsViewing.Models.UserModel>>>
+        @model VKNewsViewing.Models.UsersCollection
         <h3>Подписчиков всего: </h3>
         <ul>
-            @foreach (var user in Model.Values)
+            @foreach (var user in Model.items)
             {
-                foreach (var friend in user.Result)
-                {
-                    <li>
-                        @friend.first_name @friend.last_name
-                    </li>
-                }
+                <li>
+                    <a href="@Url.Action("Posts", "Home", new {userId = user.id})">
+                        @user.first_name @user.last_name
+                    </a>
+                </li>
             }
         </ul>
     </div>

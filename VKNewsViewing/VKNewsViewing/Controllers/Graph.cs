@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using VKNewsViewing.Models;
@@ -9,14 +8,14 @@ namespace VKNewsViewing.Controllers
     public class Graph
     {
         private VkApi _api;
-        public Dictionary<int, Task<List<UserModel>>> GraphUsers { get; }
-        public List<PostsCollection> SortedPosts { get; set; }
+        public Dictionary<int, List<UserModel>> GraphUsers { get; set; }
+        public PostsCollection SortedPosts { get; }
 
         public Graph()
         {
-            GraphUsers = new Dictionary<int, Task<List<UserModel>>>();
+            GraphUsers = new Dictionary<int, List<UserModel>>();
             _api = new VkApi();
-            SortedPosts = new List<PostsCollection>();
+            SortedPosts = new PostsCollection {items = new List<PostModel>(), count = 0};
         }
 
         private async Task<List<UserModel>> GetFriendsForMemberAsync(int userId)
@@ -25,20 +24,20 @@ namespace VKNewsViewing.Controllers
             return userFriends?.items;
         }
 
-        public async Task<Dictionary<int, Task<List<UserModel>>>> GetAllFriendsAsync(List<UserModel> members)
+        public async Task<Dictionary<int, List<UserModel>>> GetAllFriendsAsync(List<UserModel> members)
         {
+            var tasks = new Dictionary<int, Task<List<UserModel>>>();
             foreach (var member in members)
             {
                 var friends = GetFriendsForMemberAsync(member.id);
-                GraphUsers.Add(member.id, friends);
+                tasks.Add(member.id, friends);
             }
-            await Task.WhenAll(GraphUsers.Values);
-            //foreach (var member in members)
-            //{
-            //    var friendsId = await GetFriendsAsync(member.id);
-            //    if (friendsId == null) continue;
-            //    GraphUsers.Add(member.id, friendsId);
-            //}
+            await Task.WhenAll(tasks.Values);
+
+            foreach (var user in GraphUsers)
+            {
+                GraphUsers.Add(user.Key, user.Value);
+            }
             return GraphUsers;
         }
 
@@ -49,45 +48,58 @@ namespace VKNewsViewing.Controllers
 
         private async Task<PostsCollection> GetPostsForMemberFriendAsync(int friendId)
         {
-            //var obj = new PostsCollection();
-            //obj.count = 100;
-            //return obj;
-            var allTasks = new List<Task<PostsCollection>>();
-            var allPosts = new PostsCollection();
-
-            //var firstHundredPosts = _api.GetPostsAsync(friendId, 0);
-            //allTasks.Add(firstHundredPosts);
-            //var amountPosts = firstHundredPosts.count + 100;
-            for (var i = 0; i < 300; i += 100)
+            var allPosts = new PostsCollection {items = new List<PostModel>(), count = 0};
+            var hundredPosts = await _api.GetPostsAsync(friendId);
+            var i = 0;
+            while (hundredPosts != null && hundredPosts.items.Count != 0)
             {
-                var hundredPosts = _api.GetPostsAsync(friendId, i);
-                allTasks.Add(hundredPosts);
-            }
-
-            await Task.WhenAll(allTasks);
-
-            foreach (var post in allTasks)
-            {
-                allPosts.CopyData(post.Result.items);
+                allPosts.CopyData(hundredPosts.items);
+                allPosts.count = hundredPosts.count;
+                i += 100;
+                hundredPosts = await _api.GetPostsAsync(friendId, i);
             }
             return allPosts;
         }
 
-        public async Task<List<PostsCollection>> GetAllPostsForUserAsync(int userId)
+        public async Task<PostsCollection> GetAllPostsForUserAsync(int userId)
         {
             var allTasks = new List<Task<PostsCollection>>();
 
-            foreach (var friend in GraphUsers[userId].Result)
+            foreach (var friend in GraphUsers[userId])
             {
                 allTasks.Add(GetPostsForMemberFriendAsync(friend.id));
             }
-            await Task.WhenAll(allTasks);
 
-            foreach (var post in allTasks)
+            var results = await Task.WhenAll(allTasks);
+
+            var allPosts = new PostsCollection {items = new List<PostModel>(), count = 0};
+
+            foreach (var post in results)
             {
-                SortedPosts.Add(post.Result);
+                if (post.count != 0)
+                {
+                    allPosts.CopyData(post.items);
+                    allPosts.count += post.count;
+                }
             }
-            //sorting
+            return allPosts;
+        }
+
+        public PostsCollection SortPosts(string filter, PostsCollection allPosts)
+        {
+            switch (filter)
+            {
+                case "likes":
+                    SortedPosts.items = allPosts.items.OrderByDescending(post => post.likes.count).ToList();
+                    break;
+                case "comments":
+                    SortedPosts.items = allPosts.items.OrderByDescending(post => post.comments.count).ToList();
+                    break;
+                case "reposts":
+                    SortedPosts.items = allPosts.items.OrderByDescending(post => post.reposts.count).ToList();
+                    break;
+            }
+            SortedPosts.count = allPosts.count;
             return SortedPosts;
         }
     }

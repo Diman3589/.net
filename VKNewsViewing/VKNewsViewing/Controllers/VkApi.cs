@@ -71,7 +71,7 @@ namespace VKNewsViewing.Controllers
             return json != null ? JsonConvert.DeserializeObject<UsersCollection>(json) : null;
         }
 
-        public async Task<PostsCollection> GetPostsAsync(int userId, int offset)
+        public async Task<PostsCollection> GetPostsAsync(int userId, int offset = 0)
         {
             var json = await MakeRequestAsync("https://api.vk.com/method/wall.get?owner_id=", userId, "nickname",
                 "&filter=owner&count=100&offset=" + offset);
