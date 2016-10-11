@@ -1,0 +1,31 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="jumbotron">
+    <h1>ASP.NET</h1>
+    <p class="lead">ASP.NET is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
+    <p>@ViewBag.Message</p>
+    <p>
+        <a href="http://asp.net" class="btn btn-primary btn-lg">Learn more &raquo;</a>
+    </p>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h2>Users</h2>
+        @model Dictionary<int, System.Threading.Tasks.Task<List<VKNewsViewing.Models.UserModel>>>
+        <h3>Подписчиков всего: </h3>
+        <ul>
+            @foreach (var user in Model.Values)
+            {
+                foreach (var friend in user.Result)
+                {
+                    <li>
+                        @friend.first_name @friend.last_name
+                    </li>
+                }
+            }
+        </ul>
+    </div>
+</div>
