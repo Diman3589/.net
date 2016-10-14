@@ -25,17 +25,25 @@ namespace VKNewsViewing.Models
         public Likes likes;
         public Comments comments;
         public Reposts reposts;
+        public double date;
+        public string text;
     }
-
 
     public class PostsCollection
     {
         public int count;
         public List<PostModel> items { get; set; }
+        public PostsCollection()
+        {
+            items = new List<PostModel>();
+        }
 
         public void CopyData(List<PostModel> posts)
         {
-            items.AddRange(posts);
+            if (posts != null && posts.Count > 0)
+            {
+                items.AddRange(posts);
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.Ajax.Utilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VKNewsViewing.Models;
@@ -76,6 +78,11 @@ namespace VKNewsViewing.Controllers
             var json = await MakeRequestAsync("https://api.vk.com/method/wall.get?owner_id=", userId, "nickname",
                 "&filter=owner&count=100&offset=" + offset);
             json = RemoveRoot(json);
+            //if (json != null)
+            //{
+            //    var obj = JObject.Parse(json);
+            //    json = obj["items"]?.ToString();
+            //}
             return json != null ? JsonConvert.DeserializeObject<PostsCollection>(json) : null;
         }
     }

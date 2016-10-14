@@ -1,15 +1,15 @@
 ﻿@{
     ViewBag.Title = "Posts";
 }
-<h2>@ViewBag.Title.</h2>
-<h3>@ViewBag.Message</h3>
+<h2>@ViewBag.Title</h2>
+<h3>Time: @ViewBag.Message</h3>
 
 <ul>
     @model VKNewsViewing.Models.PostsCollection
     @foreach (var post in Model.items)
     {
         <li>
-            <a href="https://vk.com/@(post.owner_id)?w=wall@(post.owner_id)_@(post.id)">post_@post.id</a>
+            <a href="https://vk.com/id@(post.owner_id)?w=wall@(post.owner_id)_@(post.id)">post_@post.id</a>
         </li>
     }
 </ul>
